@@ -1,0 +1,527 @@
+<!-- <!doctype html>
+<html lang="en">
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <main>
+      <h1 class="uppercase text-3xl font-semibold m-10">single task page</h1>
+      <form class="max-w-lg space-y-4 w-full shadow-lg p-4 rounded-lg">
+        <input
+          class="editTask w-full border border-gray-300 rounded-lg px-4 py-2"
+          type="text"
+        />
+        <label for="completed">
+          <input
+            class="editcomplete border border-gray-300 rounded-lg px-4 py-2"
+            type="checkbox"
+          />
+          completed
+        </label>
+        <button
+          type="submit"
+          class="w-full bg-green-400 mt-2 py-2 rounded border-none cursor-pointer"
+        >
+          edit
+        </button>
+      </form>
+    </main>
+    <script>
+      const id = new URLSearchParams(window.location.search).get('id')
+      console.log(id)
+      const getTask = async () => {
+        const taskEdit = document.querySelector('.editTask')
+        const completed = document.querySelector('.editcomplete')
+        try {
+          const res = await fetch('/api/v1/tasks')
+          let { tasks } = await res.json()
+          const task = tasks.find((task) => task._id === id)
+          console.log(task)
+          taskEdit.value = task.name
+          completed.checked = task.completed
+        } catch (error) {
+          console.log(error)
+        }
+      }
+      getTask()
+      const form = document.querySelector('form')
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        try {
+          const taskEdit = document.querySelector('.editTask').value
+          const completed = document.querySelector('.editcomplete').checked
+          await fetch(`/api/v1/tasks/${id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: taskEdit, completed }),
+          })
+          console.log({ taskEdit, completed })
+          window.location.replace('/index.html')
+        } catch (error) {
+          console.log(error)
+        }
+      })
+    </script>
+  </body>
+</html> -->
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Edit Task | Task Manager</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    />
+
+    <style type="text/tailwindcss">
+      @theme {
+        --color-brand: #2563eb;
+      }
+    </style>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #f8fafc;
+        color: #1e293b;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      .page-container {
+        width: min(100% - 40px, 1100px);
+        margin: 0 auto;
+      }
+
+      .edit-card {
+        width: 100%;
+        max-width: 520px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 8px 30px rgba(15, 23, 42, 0.045);
+      }
+
+      .form-input {
+        width: 100%;
+        height: 46px;
+        padding: 0 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 7px;
+        background: #fff;
+        color: #1e293b;
+        font-size: 14px;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+      }
+
+      .form-input:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+
+      .save-button {
+        background: #2563eb;
+        color: #fff;
+        transition: background 0.2s;
+      }
+
+      .save-button:hover {
+        background: #1d4ed8;
+      }
+
+      .save-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .cancel-button {
+        border: 1px solid #e2e8f0;
+        color: #475569;
+        transition: background 0.2s;
+      }
+
+      .cancel-button:hover {
+        background: #f1f5f9;
+      }
+
+      .status-message {
+        display: none;
+        padding: 12px 14px;
+        border-radius: 7px;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .status-message.error {
+        display: block;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+      }
+
+      .status-message.success {
+        display: block;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #15803d;
+      }
+
+      .status-message.info {
+        display: block;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1d4ed8;
+      }
+
+      .custom-checkbox {
+        width: 17px;
+        height: 17px;
+        accent-color: #2563eb;
+        cursor: pointer;
+      }
+
+      @media (max-width: 640px) {
+        .page-container {
+          width: min(100% - 28px, 520px);
+        }
+
+        .edit-card {
+          padding: 20px;
+          border-radius: 9px;
+        }
+
+        .page-title {
+          font-size: 24px;
+        }
+
+        .form-actions {
+          flex-direction: column-reverse;
+        }
+
+        .form-actions button,
+        .form-actions a {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+
+      @media (max-width: 380px) {
+        .page-container {
+          width: calc(100% - 22px);
+        }
+
+        .edit-card {
+          padding: 16px;
+        }
+
+        .page-title {
+          font-size: 21px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <main class="min-h-screen flex flex-col">
+      <!-- Navigation -->
+      <header class="bg-white border-b border-slate-200">
+        <div
+          class="page-container min-h-[65px] flex items-center justify-between gap-4"
+        >
+          <a
+            href="/index.html"
+            class="flex items-center gap-2 text-slate-800 no-underline"
+          >
+            <span
+              class="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center"
+            >
+              <i class="fa-solid fa-list-check"></i>
+            </span>
+
+            <span class="font-semibold text-base tracking-tight">
+              Task Manager
+            </span>
+          </a>
+
+          <a
+            href="/index.html"
+            class="text-sm text-slate-500 hover:text-blue-600 transition-colors"
+          >
+            <i class="fa-solid fa-arrow-left mr-1"></i>
+            All tasks
+          </a>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <section
+        class="page-container flex-1 flex flex-col items-center justify-center py-12 sm:py-16"
+      >
+        <div class="w-full max-w-[520px]">
+          <!-- Page Heading -->
+          <div class="mb-7">
+            <p
+              class="text-xs font-semibold tracking-widest uppercase text-blue-600 mb-2"
+            >
+              Task Management
+            </p>
+
+            <h1 class="page-title text-3xl font-semibold tracking-tight">
+              Edit task
+            </h1>
+
+            <p class="text-sm text-slate-500 mt-2 leading-relaxed">
+              Update your task details and manage its completion status.
+            </p>
+          </div>
+
+          <!-- Edit Form -->
+          <div class="edit-card p-7">
+            <div class="flex items-center gap-3 mb-7">
+              <div
+                class="w-11 h-11 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"
+              >
+                <i class="fa-regular fa-pen-to-square text-lg"></i>
+              </div>
+
+              <div>
+                <h2 class="font-semibold text-sm">Task information</h2>
+
+                <p class="text-xs text-slate-500 mt-1">
+                  Make changes to your task below.
+                </p>
+              </div>
+            </div>
+
+            <form id="editTaskForm" class="space-y-6">
+              <!-- Task Name -->
+              <div>
+                <label
+                  for="taskName"
+                  class="block text-sm font-medium text-slate-700 mb-2"
+                >
+                  Task name
+                </label>
+
+                <input
+                  id="taskName"
+                  class="editTask form-input"
+                  type="text"
+                  placeholder="Enter your task name"
+                  maxlength="150"
+                  required
+                />
+
+                <p class="text-xs text-slate-400 mt-2">
+                  Give your task a clear and descriptive name.
+                </p>
+              </div>
+
+              <!-- Completion Status -->
+              <div
+                class="flex items-center justify-between gap-4 rounded-lg border border-slate-200 p-4"
+              >
+                <div>
+                  <p class="text-sm font-medium text-slate-700">
+                    Completion status
+                  </p>
+
+                  <p class="text-xs text-slate-500 mt-1">
+                    Mark this task as completed.
+                  </p>
+                </div>
+
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    id="completed"
+                    class="editcomplete custom-checkbox"
+                  />
+
+                  <span class="text-sm text-slate-600"> Completed </span>
+                </label>
+              </div>
+
+              <!-- Feedback -->
+              <div
+                id="statusMessage"
+                class="status-message"
+                role="status"
+                aria-live="polite"
+              ></div>
+
+              <!-- Actions -->
+              <div class="form-actions flex items-center gap-3 pt-2">
+                <a
+                  href="/index.html"
+                  class="cancel-button h-11 px-5 rounded-lg flex items-center text-sm font-medium no-underline"
+                >
+                  Cancel
+                </a>
+
+                <button
+                  type="submit"
+                  id="saveButton"
+                  class="save-button h-11 flex-1 rounded-lg flex items-center justify-center gap-2 text-sm font-medium cursor-pointer border-0"
+                >
+                  <i class="fa-solid fa-check"></i>
+                  Save changes
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <p class="text-center text-xs text-slate-400 mt-6">
+            Keep your tasks organised and stay productive.
+          </p>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="border-t border-slate-200 bg-white py-5">
+        <div
+          class="page-container flex flex-col sm:flex-row items-center justify-between gap-2"
+        >
+          <p class="text-xs text-slate-400">Task Manager</p>
+
+          <p class="text-xs text-slate-400">
+            Manage your work, one task at a time.
+          </p>
+        </div>
+      </footer>
+    </main>
+
+    <script>
+      const id = new URLSearchParams(window.location.search).get('id')
+
+      const form = document.querySelector('#editTaskForm')
+      const taskEdit = document.querySelector('.editTask')
+      const completed = document.querySelector('.editcomplete')
+      const saveButton = document.querySelector('#saveButton')
+      const statusMessage = document.querySelector('#statusMessage')
+
+      // Display feedback messages
+      const showMessage = (message, type = 'info') => {
+        statusMessage.textContent = message
+        statusMessage.className = `status-message ${type}`
+      }
+
+      // Load individual task
+      const getTask = async () => {
+        if (!id) {
+          showMessage(
+            'Task ID is missing. Please return to your task list.',
+            'error',
+          )
+          form.querySelector('button').disabled = true
+          return
+        }
+
+        try {
+          showMessage('Loading task information...', 'info')
+
+          const res = await fetch('/api/v1/tasks')
+
+          if (!res.ok) {
+            throw new Error('Unable to retrieve tasks.')
+          }
+
+          const { tasks } = await res.json()
+
+          const task = tasks.find((task) => task._id === id)
+
+          if (!task) {
+            throw new Error('The requested task could not be found.')
+          }
+
+          taskEdit.value = task.name
+          completed.checked = task.completed
+
+          statusMessage.className = 'status-message'
+        } catch (error) {
+          showMessage(error.message || 'Something went wrong.', 'error')
+          form.querySelector('button').disabled = true
+        }
+      }
+
+      // Update task
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault()
+
+        const name = taskEdit.value.trim()
+        const isCompleted = completed.checked
+
+        if (!name) {
+          showMessage('Please enter a task name.', 'error')
+          taskEdit.focus()
+          return
+        }
+
+        try {
+          saveButton.disabled = true
+
+          saveButton.innerHTML = `
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Saving changes...
+          `
+
+          const res = await fetch(`/api/v1/tasks/${id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name,
+              completed: isCompleted,
+            }),
+          })
+
+          const data = await res.json().catch(() => ({}))
+
+          if (!res.ok) {
+            throw new Error(
+              data.msg || data.message || 'Unable to update task.',
+            )
+          }
+
+          showMessage('Task updated successfully. Redirecting...', 'success')
+
+          setTimeout(() => {
+            window.location.replace('/index.html')
+          }, 800)
+        } catch (error) {
+          showMessage(error.message || 'Something went wrong.', 'error')
+
+          saveButton.disabled = false
+
+          saveButton.innerHTML = `
+            <i class="fa-solid fa-check"></i>
+            Save changes
+          `
+        }
+      })
+
+      // Initialise page
+      getTask()
+    </script>
+  </body>
+</html>
